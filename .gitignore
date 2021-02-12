@@ -1,0 +1,8 @@
+node_modules
+
+# production
+dist
+
+# test
+test.html
+test2.html
