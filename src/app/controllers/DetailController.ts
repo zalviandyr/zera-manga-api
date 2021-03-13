@@ -1,6 +1,6 @@
 import Controller from "@cores/Controller";
 import { mangaDetail, chapterDetail } from "@constants/url";
-import { cleanUrl, getInfo, chapterTrim, chapterTrim2 } from "@helpers/stringHelper";
+import { cleanUrl, getInfo, chapterTrim, chapterTrim2, genreTrim } from "@helpers/stringHelper";
 import axios from "axios";
 import cheerioModule from "cheerio";
 import puppeteer from "puppeteer";
@@ -14,6 +14,7 @@ class DetailController extends Controller {
     const rootChapter = selector("section.bixbox.epcheck");
 
     const response: any = {};
+    response.detail_slug = detailSlug;
     response.title = rootInfo.find(".entry-title").text().trim();
     response.thumb = cleanUrl(rootInfo.find(".thumb > img").attr("src"));
     response.rating = rootInfo.find(".rt > .rating > strong").text().trim()?.split(" ")[1];
@@ -28,11 +29,15 @@ class DetailController extends Controller {
     });
 
     // genre anime
-    const genre: Array<string> = [];
+    const genre: Array<{}> = [];
     rootInfo.find(".infox > .genxed > a").each((index, element) => {
-      genre.push(selector(element).text().trim());
+      const temp: any = {};
+      temp.title = selector(element).text().trim();
+      temp.endpoint = genreTrim(selector(element).attr("href"));
+
+      genre.push(temp);
     });
-    response.genre = genre.join(", ");
+    response.genre = genre;
 
     // synopsis
     response.synopsis = rootInfo.find(".infox > .shortseo").text();
@@ -84,6 +89,7 @@ class DetailController extends Controller {
       return this.sendJson({}, "Laman tidak ditemukan");
     }
 
+    response.curr_chapter_endpoint = detailSlug;
     await page.waitForSelector(".chnav");
     const prev = await page.$('a[rel="prev"]');
     const prevChapterEndpoint = await prev?.evaluate((element) => element.getAttribute("href"));
